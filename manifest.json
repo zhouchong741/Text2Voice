@@ -1,0 +1,17 @@
+{
+    "name": "Voice Loop | 循环朗读助手",
+    "short_name": "Voice Loop",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#0f172a",
+    "description": "一个沉浸式的单词/短句循环朗读记忆训练工具。",
+    "icons": [
+        {
+            "src": "icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
