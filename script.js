@@ -15,7 +15,7 @@ const els = {
     currentWord: document.getElementById('currentWord'),
     queueList: document.getElementById('queueList'),
     statusText: document.getElementById('statusText'),
-    timerPie: document.getElementById('timerPie'),
+    // timerPie: document.getElementById('timerPie'),
     progressBar: document.getElementById('progressBar'),
     progressText: document.getElementById('progressText'),
     themeToggle: document.getElementById('themeToggle')
@@ -178,7 +178,7 @@ function resetSequence() {
 
     els.currentWord.textContent = "...";
     els.statusText.textContent = "准备就绪";
-    els.timerPie.style.setProperty('--percent', '0%');
+    // els.timerPie.style.setProperty('--percent', '0%');
 
     renderQueue();
     updateUI();
@@ -285,7 +285,7 @@ function startProgressAnimation() {
         if (percent > 100) percent = 100;
 
         // Update Pie
-        els.timerPie.style.setProperty('--percent', `${percent}%`);
+        // els.timerPie.style.setProperty('--percent', `${percent}%`);
 
         // Update Bar (Global Progress)
         const totalWords = state.words.length;
