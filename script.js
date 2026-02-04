@@ -61,6 +61,17 @@ function init() {
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
 
+    // Mobile browsers often require user interaction to expose voices
+    const forceLoadOnInteraction = () => {
+        if (state.voices.length === 0) {
+            loadVoices();
+            // Some engines need a 'resume' kick or empty speak to wake up
+            if (speechSynthesis.paused) speechSynthesis.resume();
+        }
+    };
+    document.addEventListener('touchstart', forceLoadOnInteraction, { passive: true });
+    document.addEventListener('click', forceLoadOnInteraction, { passive: true });
+
     updateUI();
 }
 
