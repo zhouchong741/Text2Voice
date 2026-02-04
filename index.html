@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Loop | 循环朗读助手</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="logo">Voice Loop</div>
+            <div class="subtitle">沉浸式记忆训练工具</div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main>
+            <!-- Left Panel: Controls & Input -->
+            <section class="panel control-panel">
+                
+                <!-- Settings Group -->
+                <div class="card settings-card">
+                    <h3>⚙️ 设置</h3>
+                    <div class="input-group-row">
+                        <div class="input-field">
+                            <label for="interval">间隔时长 (秒)</label>
+                            <input type="number" id="interval" value="30" min="5" step="1">
+                        </div>
+                        <div class="input-field">
+                            <label for="repetitions">重复次数</label>
+                            <input type="number" id="repetitions" value="3" min="1" max="10">
+                        </div>
+                    </div>
+                    <div class="input-field">
+                        <label for="voiceSelect">朗读声音</label>
+                        <select id="voiceSelect">
+                            <option value="">加载声音中...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Input Group -->
+                <div class="card input-card">
+                    <div class="card-header">
+                        <h3>📝 输入内容</h3>
+                        <span class="badget">每行一个或空格分隔</span>
+                    </div>
+                    <textarea id="textInput" placeholder="在此输入需要朗读的单词或短句...&#10;Apple&#10;Banana&#10;Orange"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="actions">
+                    <button id="startBtn" class="btn primary">开始播放 ▶</button>
+                    <button id="pauseBtn" class="btn secondary" disabled>暂停 ⏸</button>
+                    <button id="resetBtn" class="btn danger">重置 ↺</button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Display & Feedback -->
+            <section class="panel display-panel">
+                <!-- Active Word Display -->
+                <div class="card active-word-card">
+                    <div class="status-indicator">
+                        <span id="statusText">准备就绪</span>
+                        <div class="timer-pie" id="timerPie" style="--percent:0"></div>
+                    </div>
+                    
+                    <div class="word-stage">
+                        <h1 id="currentWord">...</h1>
+                    </div>
+
+                    <div class="progress-info">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progressBar"></div>
+                        </div>
+                        <span id="progressText">0 / 0</span>
+                    </div>
+                </div>
+
+                <!-- Upcoming List -->
+                <div class="card queue-card">
+                    <h3>即将播放</h3>
+                    <ul id="queueList" class="queue-list">
+                        <!-- List items injected by JS -->
+                        <li class="empty-state">等待输入...</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
