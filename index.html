@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <meta name="theme-color" content="#0f172a">
 </head>
+
 <body>
 
     <div class="app-container">
@@ -20,7 +22,7 @@
         <main>
             <!-- Left Panel: Controls & Input -->
             <section class="panel control-panel">
-                
+
                 <!-- Settings Group -->
                 <div class="card settings-card">
                     <h3>⚙️ 设置</h3>
@@ -32,6 +34,10 @@
                         <div class="input-field">
                             <label for="repetitions">重复次数</label>
                             <input type="number" id="repetitions" value="3" min="1" max="10">
+                        </div>
+                        <div class="input-field">
+                            <label for="rate">语速 (0.5-2)</label>
+                            <input type="number" id="rate" value="1" min="0.5" max="2" step="0.1">
                         </div>
                     </div>
                     <div class="input-field">
@@ -67,7 +73,7 @@
                         <span id="statusText">准备就绪</span>
                         <div class="timer-pie" id="timerPie" style="--percent:0"></div>
                     </div>
-                    
+
                     <div class="word-stage">
                         <h1 id="currentWord">...</h1>
                     </div>
@@ -94,4 +100,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>

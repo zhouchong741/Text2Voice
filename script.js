@@ -7,6 +7,7 @@ const els = {
     input: document.getElementById('textInput'),
     interval: document.getElementById('interval'),
     repetitions: document.getElementById('repetitions'),
+    rate: document.getElementById('rate'),
     voiceSelect: document.getElementById('voiceSelect'),
     startBtn: document.getElementById('startBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
@@ -42,14 +43,14 @@ function init() {
 
     // Load initial data from placeholder if empty explanation needed, 
     // but user likely wants to see the placeholder text.
-    
+
     bindEvents();
     updateUI();
 }
 
 function loadVoices() {
     state.voices = speechSynthesis.getVoices();
-    
+
     // Sort: Preferred lang first
     state.voices.sort((a, b) => {
         const langA = a.lang.toUpperCase();
@@ -62,7 +63,7 @@ function loadVoices() {
     els.voiceSelect.innerHTML = state.voices
         .map((voice, index) => `<option value="${index}">${voice.name} (${voice.lang})</option>`)
         .join('');
-        
+
     // Select a good default if available (Chinese or English)
     // Browser defaults usually work, but let's try to match browser lang
 }
@@ -71,7 +72,7 @@ function bindEvents() {
     els.startBtn.addEventListener('click', startSequence);
     els.pauseBtn.addEventListener('click', togglePause);
     els.resetBtn.addEventListener('click', resetSequence);
-    
+
     // Auto-update queue visual on input change
     els.input.addEventListener('input', () => {
         if (!state.isPlaying) parseInput();
@@ -111,12 +112,13 @@ function startSequence() {
         state.isPlaying = true;
         state.isPaused = false;
         state.currentIndex = 0;
-        
+
         // Lock inputs
         els.input.disabled = true;
         els.interval.disabled = true;
         els.repetitions.disabled = true;
-        
+        els.rate.disabled = true;
+
         playWordCycle();
     }
     updateUI();
@@ -132,7 +134,7 @@ function togglePause() {
         clearTimers();
         speechSynthesis.cancel(); // Stop speaking immediately
         els.statusText.textContent = "已暂停";
-    } 
+    }
     updateUI();
 }
 
@@ -142,14 +144,15 @@ function resetSequence() {
     state.currentIndex = 0;
     clearTimers();
     speechSynthesis.cancel();
-    
+
     els.input.disabled = false;
     els.interval.disabled = false;
     els.repetitions.disabled = false;
-    
+    els.rate.disabled = false;
+
     els.currentWord.textContent = "...";
     els.timerPie.style.setProperty('--percent', '0%');
-    
+
     renderQueue();
     updateUI();
 }
@@ -192,26 +195,27 @@ function playWordCycle() {
         state.currentIndex++;
         playWordCycle();
     }, totalDuration);
-    
+
     state.mainTimer = nextTimer;
 }
 
 function speak(text) {
-    if (!state.isPlaying && !state.isPaused) return; 
+    if (!state.isPlaying && !state.isPaused) return;
 
     // Cancel current if overlapping (though design prevents overlap if interval is large enough)
     speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    
+
     // Apply settings
     const voiceIdx = els.voiceSelect.value;
     if (voiceIdx && state.voices[voiceIdx]) {
         utterance.voice = state.voices[voiceIdx];
     }
-    
+
     // Rate/Pitch defaults
-    utterance.rate = 1;
+    const rateVal = parseFloat(els.rate.value) || 1;
+    utterance.rate = rateVal;
     utterance.pitch = 1;
 
     // Visual flare
@@ -242,28 +246,28 @@ function clearTimers() {
 
 function startProgressAnimation() {
     if (state.animationFrame) cancelAnimationFrame(state.animationFrame);
-    
+
     function tick() {
         if (!state.isPlaying) return;
 
         const now = Date.now();
         const elapsed = now - state.startTime;
         let percent = (elapsed / state.wordDuration) * 100;
-        
+
         if (percent > 100) percent = 100;
-        
+
         // Update Pie
         els.timerPie.style.setProperty('--percent', `${percent}%`);
-        
+
         // Update Bar (Global Progress)
         const totalWords = state.words.length;
         // Base progress on completed words
         const basePercent = (state.currentIndex / totalWords) * 100;
         // Add current word fraction
         const additional = (percent / 100) * (1 / totalWords) * 100;
-        
+
         els.progressBar.style.width = `${basePercent + additional}%`;
-        
+
         if (percent < 100) {
             state.animationFrame = requestAnimationFrame(tick);
         }
@@ -273,7 +277,7 @@ function startProgressAnimation() {
 
 function renderQueue() {
     els.queueList.innerHTML = '';
-    
+
     if (state.words.length === 0) {
         els.queueList.innerHTML = '<li class="empty-state">等待输入...</li>';
         return;

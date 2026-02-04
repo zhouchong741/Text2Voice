@@ -24,7 +24,7 @@
 
 body {
     background-color: var(--bg-color);
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(34, 211, 238, 0.15) 0px, transparent 50%);
     color: var(--text-main);
@@ -71,7 +71,8 @@ main {
     grid-template-columns: 1fr 1.5fr;
     gap: 1.5rem;
     flex: 1;
-    min-height: 0; /* Fix flex overflow */
+    min-height: 0;
+    /* Fix flex overflow */
 }
 
 /* Panels & Cards */
@@ -125,7 +126,9 @@ label {
     font-weight: 500;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-main);
@@ -135,7 +138,9 @@ input, select, textarea {
     transition: border-color 0.2s;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--primary);
 }
@@ -154,7 +159,7 @@ input:focus, select:focus, textarea:focus {
 .badget {
     font-size: 0.75rem;
     color: var(--text-muted);
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     padding: 2px 8px;
     border-radius: 4px;
 }
@@ -193,6 +198,7 @@ textarea {
     background: var(--primary);
     color: #000;
 }
+
 .primary:hover:not(:disabled) {
     background: var(--primary-hover);
     transform: translateY(-2px);
@@ -200,11 +206,12 @@ textarea {
 }
 
 .secondary {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: var(--text-main);
 }
+
 .secondary:hover:not(:disabled) {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .danger {
@@ -212,6 +219,7 @@ textarea {
     color: var(--danger);
     flex: 0.5;
 }
+
 .danger:hover:not(:disabled) {
     background: rgba(239, 68, 68, 0.3);
 }
@@ -243,8 +251,8 @@ textarea {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: conic-gradient(var(--accent) var(--percent), transparent 0);
-    border: 2px solid rgba(255,255,255,0.1);
+    background: conic-gradient(var(--accent) 0% var(--percent), transparent var(--percent) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     transition: background 0.1s linear;
 }
 
@@ -273,8 +281,15 @@ textarea {
 }
 
 @keyframes popIn {
-    0% { transform: scale(0.9); opacity: 0.5; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.9);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .progress-info {
@@ -289,7 +304,7 @@ textarea {
 .progress-bar-bg {
     flex: 1;
     height: 6px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -309,7 +324,7 @@ textarea {
 /* Queue List */
 .queue-card {
     flex: 1;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 .queue-list {
@@ -323,15 +338,16 @@ textarea {
 .queue-list::-webkit-scrollbar {
     width: 6px;
 }
+
 .queue-list::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
 }
 
 .queue-item {
     padding: 0.8rem;
     margin-bottom: 0.5rem;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     border-left: 3px solid transparent;
     transition: all 0.2s;
@@ -362,24 +378,32 @@ textarea {
         overflow-y: auto;
         padding-bottom: 2rem;
     }
-    
+
     main {
         grid-template-columns: 1fr;
     }
 
     body {
         overflow-y: auto;
+        display: block;
+        /* Disable flex centering on mobile to prevent top clipping */
+        height: auto;
+        min-height: 100vh;
     }
-    
+
     .panel {
         height: auto;
     }
-    
+
     .active-word-card {
         min-height: 300px;
     }
 
     #currentWord {
         font-size: 2.5rem;
+    }
+
+    .input-group-row {
+        flex-direction: column;
     }
 }
