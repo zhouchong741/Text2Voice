@@ -17,7 +17,8 @@ const els = {
     statusText: document.getElementById('statusText'),
     timerPie: document.getElementById('timerPie'),
     progressBar: document.getElementById('progressBar'),
-    progressText: document.getElementById('progressText')
+    progressText: document.getElementById('progressText'),
+    themeToggle: document.getElementById('themeToggle')
 };
 
 // --- State ---
@@ -37,41 +38,66 @@ const state = {
 // --- Initialization ---
 function init() {
     loadVoices();
+    // Mobile browsers often load voices asynchronously with a delay
+    // Retry a few times if empty
+    let retryCount = 0;
+    const retryLoad = () => {
+        if (state.voices.length === 0 && retryCount < 5) {
+            retryCount++;
+            loadVoices();
+            setTimeout(retryLoad, 1000);
+        }
+    };
+    setTimeout(retryLoad, 500);
+
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // Load initial data from placeholder if empty explanation needed, 
-    // but user likely wants to see the placeholder text.
-
     bindEvents();
+
+    // Theme Init
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
     updateUI();
 }
 
 function loadVoices() {
-    state.voices = speechSynthesis.getVoices();
+    const allVoices = speechSynthesis.getVoices();
+    if (!allVoices || allVoices.length === 0) return;
 
-    // Sort: Preferred lang first
+    state.voices = allVoices;
+
+    // Sort: Preferred lang first (zh-CN > zh* > en > others)
     state.voices.sort((a, b) => {
-        const langA = a.lang.toUpperCase();
-        const langB = b.lang.toUpperCase();
-        if (langA.includes('CN') || langA.includes('ZH')) return -1;
-        if (langB.includes('CN') || langB.includes('ZH')) return 1;
-        return 0;
+        const getScore = (voice) => {
+            const lang = (voice.lang || '').toLowerCase().replace('_', '-');
+            if (lang === 'zh-cn') return 10;
+            if (lang.startsWith('zh')) return 5;
+            if (lang.startsWith('en')) return 1;
+            return 0;
+        };
+        const scoreA = getScore(a);
+        const scoreB = getScore(b);
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return a.name.localeCompare(b.name);
     });
 
     els.voiceSelect.innerHTML = state.voices
         .map((voice, index) => `<option value="${index}">${voice.name} (${voice.lang})</option>`)
         .join('');
 
-    // Select a good default if available (Chinese or English)
-    // Browser defaults usually work, but let's try to match browser lang
+    // Default select the first one (highest priority)
+    els.voiceSelect.selectedIndex = 0;
 }
 
 function bindEvents() {
     els.startBtn.addEventListener('click', startSequence);
     els.pauseBtn.addEventListener('click', togglePause);
     els.resetBtn.addEventListener('click', resetSequence);
+    els.themeToggle.addEventListener('click', toggleTheme);
 
     // Auto-update queue visual on input change
     els.input.addEventListener('input', () => {
@@ -151,6 +177,7 @@ function resetSequence() {
     els.rate.disabled = false;
 
     els.currentWord.textContent = "...";
+    els.statusText.textContent = "准备就绪";
     els.timerPie.style.setProperty('--percent', '0%');
 
     renderQueue();
@@ -186,6 +213,7 @@ function playWordCycle() {
         const delay = i * intervalSize;
         const timerId = setTimeout(() => {
             speak(word);
+            els.statusText.textContent = `第 ${i + 1} / ${reps} 次`;
         }, delay);
         state.subTimers.push(timerId);
     }
@@ -296,7 +324,7 @@ function renderQueue() {
 
 function updateActiveWord(word) {
     els.currentWord.textContent = word;
-    els.statusText.textContent = "朗读中...";
+    // statusText will be updated by the loop in playWordCycle
     renderQueue(); // To update active class
     updateProgressText();
 }
@@ -312,6 +340,18 @@ function scrollToActiveQueue() {
     if (active) {
         active.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeIcon(next);
+}
+
+function updateThemeIcon(theme) {
+    els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 
 function updateUI() {

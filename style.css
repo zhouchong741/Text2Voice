@@ -1,5 +1,6 @@
 /* CSS Reset & Variables */
 :root {
+    /* Dark Theme (Default) */
     --bg-color: #0f172a;
     --panel-bg: rgba(30, 41, 59, 0.7);
     --card-bg: rgba(51, 65, 85, 0.5);
@@ -13,7 +14,28 @@
     --danger: #ef4444;
     --border: rgba(148, 163, 184, 0.2);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --queue-active-bg: rgba(56, 189, 248, 0.1);
+    --queue-item-bg: rgba(255, 255, 255, 0.03);
 }
+
+[data-theme="light"] {
+    --bg-color: #f1f5f9;
+    --panel-bg: rgba(255, 255, 255, 0.75);
+    --card-bg: rgba(255, 255, 255, 0.6);
+    --input-bg: #ffffff;
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    --secondary: #64748b;
+    --accent: #0ea5e9;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --danger: #ef4444;
+    --border: rgba(148, 163, 184, 0.3);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    --queue-active-bg: rgba(2, 132, 199, 0.1);
+    --queue-item-bg: rgba(0, 0, 0, 0.03);
+}
+
 
 * {
     box-sizing: border-box;
@@ -47,9 +69,15 @@ body {
 
 header {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+}
+
+.header-left {
+    display: flex;
     align-items: baseline;
     gap: 1rem;
-    padding: 0 0.5rem;
 }
 
 .logo {
@@ -267,9 +295,11 @@ textarea {
 #currentWord {
     font-size: 4rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #fff, var(--secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    color: var(--text-main);
+    /* background: linear-gradient(135deg, #fff, var(--secondary)); */
+    /* -webkit-background-clip: text; */
+    /* -webkit-text-fill-color: transparent; */
     transition: all 0.3s ease;
     word-break: break-all;
     max-width: 100%;
@@ -304,7 +334,7 @@ textarea {
 .progress-bar-bg {
     flex: 1;
     height: 6px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border);
     border-radius: 3px;
     overflow: hidden;
 }
@@ -340,14 +370,14 @@ textarea {
 }
 
 .queue-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--border);
     border-radius: 3px;
 }
 
 .queue-item {
     padding: 0.8rem;
     margin-bottom: 0.5rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--queue-item-bg);
     border-radius: 8px;
     border-left: 3px solid transparent;
     transition: all 0.2s;
@@ -356,9 +386,9 @@ textarea {
 }
 
 .queue-item.active {
-    background: rgba(56, 189, 248, 0.1);
+    background: var(--queue-active-bg);
     border-left-color: var(--accent);
-    color: #fff;
+    color: var(--text-main);
     font-weight: 600;
     padding-left: 1.2rem;
 }
@@ -406,4 +436,20 @@ textarea {
     .input-group-row {
         flex-direction: column;
     }
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background 0.2s;
+    line-height: 1;
+    color: var(--text-main);
+}
+
+.btn-icon:hover {
+    background: var(--border);
 }
