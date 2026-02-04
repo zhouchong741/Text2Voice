@@ -50,18 +50,24 @@ body {
         radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(34, 211, 238, 0.15) 0px, transparent 50%);
     color: var(--text-main);
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    /* align-items: center; Remove center alignment related to fixed height */
+    padding: 2rem 0;
+    /* Add top/bottom padding */
+    overflow-y: auto;
+    /* Enable page scrolling */
+    overflow-x: hidden;
 }
 
 /* Layout */
 .app-container {
     width: 95%;
     max-width: 1200px;
-    height: 90vh;
+    height: auto;
+    /* Allow growth */
+    min-height: 80vh;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -99,9 +105,8 @@ main {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     gap: 1.5rem;
-    flex: 1;
-    min-height: 0;
-    /* Fix flex overflow */
+    align-items: start;
+    /* Align to top */
 }
 
 /* Panels & Cards */
@@ -109,7 +114,6 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    min-height: 0;
 }
 
 .card {
@@ -259,13 +263,24 @@ textarea {
     background: rgba(239, 68, 68, 0.3);
 }
 
-/* active-word-card */
-.active-word-card {
-    flex: 1.5;
+/* Merge Display Card */
+.display-card {
+    padding: 0;
+    overflow: hidden;
+    /* Ensure divider reaches edges if needed, or normal rect */
+}
+
+/* Active Word Section */
+.active-word-section {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     text-align: center;
+    min-height: 300px;
+    /* Give it some breathing room */
 }
 
 .status-indicator {
@@ -346,6 +361,21 @@ textarea {
     overflow: hidden;
 }
 
+.card-divider {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+    width: 100%;
+}
+
+/* Queue Section */
+.queue-section {
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.1);
+    /* Slightly darker for contrast */
+}
+
 .progress-bar-fill {
     height: 100%;
     background: var(--accent);
@@ -358,17 +388,9 @@ textarea {
     color: var(--text-muted);
 }
 
-/* Queue List */
-.queue-card {
-    flex: 1;
-    overflow: hidden;
-}
-
 .queue-list {
     list-style: none;
-    overflow-y: auto;
-    flex: 1;
-    padding-right: 0.5rem;
+    padding-right: 0;
 }
 
 /* Scrollbar */
@@ -443,7 +465,6 @@ textarea {
     }
 
     .panel {
-        height: auto;
         gap: 1rem;
     }
 

@@ -82,32 +82,36 @@
 
             <!-- Right Panel: Display & Feedback -->
             <section class="panel display-panel">
-                <!-- Active Word Display -->
-                <div class="card active-word-card">
-                    <div class="status-indicator">
-                        <span id="statusText">准备就绪</span>
-                        <!-- <div class="timer-pie" id="timerPie" style="--percent:0"></div> -->
-                    </div>
-
-                    <div class="word-stage">
-                        <h1 id="currentWord">...</h1>
-                    </div>
-
-                    <div class="progress-info">
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" id="progressBar"></div>
+                <div class="card display-card">
+                    <!-- Active Word Section -->
+                    <div class="active-word-section">
+                        <div class="status-indicator">
+                            <span id="statusText">准备就绪</span>
                         </div>
-                        <span id="progressText">0 / 0</span>
-                    </div>
-                </div>
 
-                <!-- Upcoming List -->
-                <div class="card queue-card">
-                    <h3>即将播放</h3>
-                    <ul id="queueList" class="queue-list">
-                        <!-- List items injected by JS -->
-                        <li class="empty-state">等待输入...</li>
-                    </ul>
+                        <div class="word-stage">
+                            <h1 id="currentWord">...</h1>
+                        </div>
+
+                        <div class="progress-info">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressBar"></div>
+                            </div>
+                            <span id="progressText">0 / 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <hr class="card-divider">
+
+                    <!-- Queue Section -->
+                    <div class="queue-section">
+                        <h3>即将播放</h3>
+                        <ul id="queueList" class="queue-list">
+                            <!-- List items injected by JS -->
+                            <li class="empty-state">等待输入...</li>
+                        </ul>
+                    </div>
                 </div>
             </section>
         </main>
