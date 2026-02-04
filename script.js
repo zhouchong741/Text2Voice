@@ -3,19 +3,20 @@
  */
 
 // --- DOM Elements ---
+// --- DOM Elements ---
 const els = {
     input: document.getElementById('textInput'),
     interval: document.getElementById('interval'),
     repetitions: document.getElementById('repetitions'),
     rate: document.getElementById('rate'),
-    voiceSelect: document.getElementById('voiceSelect'),
+    voiceBtnCN: document.getElementById('voiceBtnCN'),
+    voiceBtnEN: document.getElementById('voiceBtnEN'),
     startBtn: document.getElementById('startBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
     resetBtn: document.getElementById('resetBtn'),
     currentWord: document.getElementById('currentWord'),
     queueList: document.getElementById('queueList'),
     statusText: document.getElementById('statusText'),
-    // timerPie: document.getElementById('timerPie'),
     progressBar: document.getElementById('progressBar'),
     progressText: document.getElementById('progressText'),
     themeToggle: document.getElementById('themeToggle')
@@ -27,22 +28,23 @@ const state = {
     isPaused: false,
     words: [],
     currentIndex: 0,
-    mainTimer: null,     // Timer for the 30s interval
-    subTimers: [],       // Timers for the repetition within the interval
+    mainTimer: null,
+    subTimers: [],
     animationFrame: null,
-    startTime: 0,        // For calculating progress per word
-    wordDuration: 0,     // Total duration assigned per word (e.g., 30s)
-    voices: []
+    startTime: 0,
+    wordDuration: 0,
+    voices: [],
+    currentLang: 'CN', // 'CN' or 'EN'
+    voiceCN: null,
+    voiceEN: null
 };
 
 // --- Initialization ---
 function init() {
     loadVoices();
-    // Mobile browsers often load voices asynchronously with a delay
-    // Retry a few times if empty
     let retryCount = 0;
     const retryLoad = () => {
-        if (state.voices.length === 0 && retryCount < 5) {
+        if ((!state.voiceCN || !state.voiceEN) && retryCount < 5) {
             retryCount++;
             loadVoices();
             setTimeout(retryLoad, 1000);
@@ -56,16 +58,13 @@ function init() {
 
     bindEvents();
 
-    // Theme Init
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
 
-    // Mobile browsers often require user interaction to expose voices
     const forceLoadOnInteraction = () => {
-        if (state.voices.length === 0) {
+        if (!state.voiceCN || !state.voiceEN) {
             loadVoices();
-            // Some engines need a 'resume' kick or empty speak to wake up
             if (speechSynthesis.paused) speechSynthesis.resume();
         }
     };
@@ -81,27 +80,17 @@ function loadVoices() {
 
     state.voices = allVoices;
 
-    // Sort: Preferred lang first (zh-CN > zh* > en > others)
-    state.voices.sort((a, b) => {
-        const getScore = (voice) => {
-            const lang = (voice.lang || '').toLowerCase().replace('_', '-');
-            if (lang === 'zh-cn') return 10;
-            if (lang.startsWith('zh')) return 5;
-            if (lang.startsWith('en')) return 1;
-            return 0;
-        };
-        const scoreA = getScore(a);
-        const scoreB = getScore(b);
-        if (scoreA !== scoreB) return scoreB - scoreA;
-        return a.name.localeCompare(b.name);
-    });
+    // 1. Google 普通话 (zh-CN)
+    // 2. Microsoft Zira (en-US)
+    state.voiceCN = allVoices.find(v => v.name.includes('Google') && (v.lang === 'zh-CN' || v.name.includes('ZH-CN'))) ||
+        allVoices.find(v => v.lang === 'zh-CN') ||
+        allVoices.find(v => v.lang.startsWith('zh'));
 
-    els.voiceSelect.innerHTML = state.voices
-        .map((voice, index) => `<option value="${index}">${voice.name} (${voice.lang})</option>`)
-        .join('');
+    state.voiceEN = allVoices.find(v => v.name.includes('Microsoft Zira') && v.lang === 'en-US') ||
+        allVoices.find(v => v.name.includes('Google') && v.lang === 'en-US') ||
+        allVoices.find(v => v.lang === 'en-US');
 
-    // Default select the first one (highest priority)
-    els.voiceSelect.selectedIndex = 0;
+    console.log("Loaded Voices:", { CN: state.voiceCN?.name, EN: state.voiceEN?.name });
 }
 
 function bindEvents() {
@@ -110,10 +99,25 @@ function bindEvents() {
     els.resetBtn.addEventListener('click', resetSequence);
     els.themeToggle.addEventListener('click', toggleTheme);
 
+    // Voice Toggles
+    els.voiceBtnCN.addEventListener('click', () => setVoice('CN'));
+    els.voiceBtnEN.addEventListener('click', () => setVoice('EN'));
+
     // Auto-update queue visual on input change
     els.input.addEventListener('input', () => {
         if (!state.isPlaying) parseInput();
     });
+}
+
+function setVoice(lang) {
+    state.currentLang = lang;
+    if (lang === 'CN') {
+        els.voiceBtnCN.classList.add('active');
+        els.voiceBtnEN.classList.remove('active');
+    } else {
+        els.voiceBtnEN.classList.add('active');
+        els.voiceBtnCN.classList.remove('active');
+    }
 }
 
 // --- Core Logic ---
@@ -247,9 +251,10 @@ function speak(text) {
     const utterance = new SpeechSynthesisUtterance(text);
 
     // Apply settings
-    const voiceIdx = els.voiceSelect.value;
-    if (voiceIdx && state.voices[voiceIdx]) {
-        utterance.voice = state.voices[voiceIdx];
+    // Apply settings
+    const targetVoice = state.currentLang === 'CN' ? state.voiceCN : state.voiceEN;
+    if (targetVoice) {
+        utterance.voice = targetVoice;
     }
 
     // Rate/Pitch defaults

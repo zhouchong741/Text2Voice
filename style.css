@@ -85,6 +85,7 @@ header {
     font-weight: 700;
     background: linear-gradient(135deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -497,4 +498,45 @@ textarea {
 
 .btn-icon:hover {
     background: var(--border);
+}
+
+/* Voice Toggle Group */
+.voice-toggle-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.voice-btn {
+    padding: 0.6rem 0.5rem !important;
+    /* Override .btn padding */
+    font-size: 0.85rem !important;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-transform: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.voice-btn:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+    background: rgba(56, 189, 248, 0.1);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.voice-btn.active {
+    background: var(--primary);
+    color: #0f172a !important;
+    /* Force dark text */
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+.voice-btn.active:hover {
+    background: var(--primary-hover);
 }

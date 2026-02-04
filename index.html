@@ -56,9 +56,10 @@
                     </div>
                     <div class="input-field">
                         <label for="voiceSelect">朗读声音</label>
-                        <select id="voiceSelect">
-                            <option value="">加载声音中...</option>
-                        </select>
+                        <div class="voice-toggle-group" id="voiceToggleGroup">
+                            <button id="voiceBtnCN" class="btn voice-btn active" data-lang="CN">🇨🇳 Google 普通话</button>
+                            <button id="voiceBtnEN" class="btn voice-btn" data-lang="EN">🇺🇸 Microsoft Zira</button>
+                        </div>
                     </div>
                 </div>
 
