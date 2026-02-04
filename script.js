@@ -17,7 +17,7 @@ const els = {
     currentWord: document.getElementById('currentWord'),
     queueList: document.getElementById('queueList'),
     statusText: document.getElementById('statusText'),
-    progressBar: document.getElementById('progressBar'),
+    // progressBar: document.getElementById('progressBar'),
     progressText: document.getElementById('progressText'),
     themeToggle: document.getElementById('themeToggle')
 };
@@ -273,7 +273,7 @@ function speak(text) {
 function finishSequence() {
     resetSequence();
     els.statusText.textContent = "播放完成";
-    els.progressBar.style.width = '100%';
+    // els.progressBar.style.width = '100%';
     setTimeout(() => {
         alert("所有内容朗读完毕！");
     }, 100);
@@ -310,7 +310,7 @@ function startProgressAnimation() {
         // Add current word fraction
         const additional = (percent / 100) * (1 / totalWords) * 100;
 
-        els.progressBar.style.width = `${basePercent + additional}%`;
+        // els.progressBar.style.width = `${basePercent + additional}%`;
 
         if (percent < 100) {
             state.animationFrame = requestAnimationFrame(tick);
