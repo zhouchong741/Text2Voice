@@ -1,6 +1,11 @@
-const DEFAULT_AZURE_FORMAT = 'audio-24khz-48kbitrate-mono-mp3';
-const DEFAULT_CN_VOICE = 'zh-CN-XiaoxiaoNeural';
-const DEFAULT_EN_VOICE = 'en-US-JennyNeural';
+import {
+    buildXunfeiAuthUrl,
+    buildXunfeiPayload,
+    collectXunfeiAudio,
+    rateToXunfeiSpeed
+} from './xunfei.js';
+
+const DEFAULT_XUNFEI_VOICE = 'x4_xiaoyan';
 
 export default {
     async fetch(request, env) {
@@ -22,11 +27,10 @@ export default {
         try {
             const body = await request.json();
             const text = String(body.text || '').trim();
-            const lang = normalizeLang(body.lang);
             const maxTextLength = Number(env.MAX_TEXT_LENGTH || 300);
 
-            if (!env.AZURE_SPEECH_KEY || !env.AZURE_SPEECH_REGION) {
-                return jsonResponse({ error: 'Azure Speech is not configured' }, 503, corsHeaders);
+            if (!env.XUNFEI_APP_ID || !env.XUNFEI_API_KEY || !env.XUNFEI_API_SECRET) {
+                return jsonResponse({ error: 'Xunfei TTS is not configured' }, 503, corsHeaders);
             }
 
             if (!text) {
@@ -37,18 +41,17 @@ export default {
                 return jsonResponse({ error: `Text is longer than ${maxTextLength} characters` }, 413, corsHeaders);
             }
 
-            const voice = selectVoice(env, lang);
-            const ssml = buildSsml(text, voice, lang, body.rate);
-            const audioResponse = await synthesizeWithAzure(env, ssml);
-            const headers = new Headers(audioResponse.headers);
-            headers.set('Access-Control-Allow-Origin', corsHeaders.get('Access-Control-Allow-Origin'));
-            headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-            headers.set('Access-Control-Allow-Headers', 'Content-Type');
+            const audio = await synthesizeWithXunfei(env, {
+                text: addReadingPause(text),
+                voice: selectVoice(env, body.voice),
+                speed: rateToXunfeiSpeed(body.rate)
+            });
+            const headers = new Headers(corsHeaders);
             headers.set('Cache-Control', 'no-store');
             headers.set('Content-Type', 'audio/mpeg');
 
-            return new Response(audioResponse.body, {
-                status: audioResponse.status,
+            return new Response(audio, {
+                status: 200,
                 headers
             });
         } catch (error) {
@@ -61,64 +64,39 @@ export default {
     }
 };
 
-async function synthesizeWithAzure(env, ssml) {
-    const region = String(env.AZURE_SPEECH_REGION).trim();
-    const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/ssml+xml',
-            'Ocp-Apim-Subscription-Key': env.AZURE_SPEECH_KEY,
-            'X-Microsoft-OutputFormat': env.AZURE_OUTPUT_FORMAT || DEFAULT_AZURE_FORMAT,
-            'User-Agent': 'Text2Voice'
-        },
-        body: ssml
+async function synthesizeWithXunfei(env, { text, voice, speed }) {
+    const authUrl = await buildXunfeiAuthUrl({
+        apiKey: env.XUNFEI_API_KEY,
+        apiSecret: env.XUNFEI_API_SECRET
     });
+    const payload = buildXunfeiPayload({
+        appId: env.XUNFEI_APP_ID,
+        text,
+        voice,
+        speed
+    });
+    const socket = new WebSocket(authUrl);
+    return collectXunfeiAudio(socket, payload, Number(env.XUNFEI_TIMEOUT_MS || 15000));
+}
 
-    if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(`Azure Speech failed: ${response.status} ${detail.slice(0, 200)}`);
+function selectVoice(env, requestedVoice) {
+    if (requestedVoice === 'EN' && env.XUNFEI_VOICE_EN) {
+        return env.XUNFEI_VOICE_EN;
     }
 
-    return response;
-}
-
-function selectVoice(env, lang) {
-    if (lang === 'en-US') {
-        return env.AZURE_VOICE_EN || DEFAULT_EN_VOICE;
+    if (requestedVoice === 'CN' && env.XUNFEI_VOICE_CN) {
+        return env.XUNFEI_VOICE_CN;
     }
 
-    return env.AZURE_VOICE_CN || DEFAULT_CN_VOICE;
+    return env.XUNFEI_VOICE_CN || DEFAULT_XUNFEI_VOICE;
 }
 
-function buildSsml(text, voice, lang, rawRate) {
-    const rate = normalizeRate(rawRate);
-    const escapedText = escapeXml(addReadingPause(text, lang));
-
-    return [
-        '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"',
-        ` xml:lang="${lang}">`,
-        `<voice name="${voice}">`,
-        `<prosody rate="${rate}">${escapedText}</prosody>`,
-        '</voice>',
-        '</speak>'
-    ].join('');
-}
-
-function addReadingPause(text, lang) {
+function addReadingPause(text) {
     if (/[。！？.!?]$/.test(text)) {
         return text;
     }
 
-    return lang === 'zh-CN' ? `${text}。` : `${text}.`;
-}
-
-function normalizeRate(rate) {
-    const numericRate = Number(rate);
-    if (!Number.isFinite(numericRate)) return '0%';
-
-    const percent = Math.round((Math.min(Math.max(numericRate, 0.5), 2) - 1) * 100);
-    return `${percent >= 0 ? '+' : ''}${percent}%`;
+    return `${text}。`;
 }
 
 function buildCorsHeaders(env) {
@@ -130,10 +108,6 @@ function buildCorsHeaders(env) {
     });
 }
 
-function normalizeLang(lang) {
-    return lang === 'en' ? 'en-US' : 'zh-CN';
-}
-
 function jsonResponse(body, status, headers) {
     const responseHeaders = new Headers(headers);
     responseHeaders.set('Content-Type', 'application/json; charset=utf-8');
@@ -141,18 +115,5 @@ function jsonResponse(body, status, headers) {
     return new Response(JSON.stringify(body), {
         status,
         headers: responseHeaders
-    });
-}
-
-function escapeXml(value) {
-    return String(value).replace(/[<>&'"]/g, (char) => {
-        switch (char) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case "'": return '&apos;';
-            case '"': return '&quot;';
-            default: return char;
-        }
     });
 }

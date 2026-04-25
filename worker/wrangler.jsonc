@@ -9,9 +9,8 @@
   "vars": {
     "ALLOWED_ORIGIN": "*",
     "MAX_TEXT_LENGTH": "300",
-    "AZURE_SPEECH_REGION": "eastus",
-    "AZURE_OUTPUT_FORMAT": "audio-24khz-48kbitrate-mono-mp3",
-    "AZURE_VOICE_CN": "zh-CN-XiaoxiaoNeural",
-    "AZURE_VOICE_EN": "en-US-JennyNeural"
+    "XUNFEI_TIMEOUT_MS": "15000",
+    "XUNFEI_VOICE_CN": "x4_xiaoyan",
+    "XUNFEI_VOICE_EN": "x4_xiaoyan"
   }
 }

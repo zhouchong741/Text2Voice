@@ -6,7 +6,7 @@
 
 *   **智能循环**：自定义间隔时间（默认30秒），在间隔内自动多次朗读（默认3次）。
 *   **深色模式**：采用 Deepmind 风格的玻璃拟态（Glassmorphism）设计，专注沉浸。
-*   **自然语音优先**：通过 Cloudflare Worker 中转 Azure Speech 神经语音，发音比浏览器原生声音更自然。
+*   **自然语音优先**：通过 Cloudflare Worker 中转讯飞在线语音合成，发音比浏览器原生声音更自然。
 *   **原生语音兜底**：Worker 未配置、网络失败或额度用尽时，自动使用浏览器原生 Web Speech API。
 *   **离线兜底**：未配置云端 TTS 时，仍可依赖浏览器原生能力发声。
 *   **可视化进度**：清晰的倒计时圆环和进度条。
@@ -16,25 +16,25 @@
 GitHub Pages 是纯静态托管，不能把任何 TTS API Key 放到前端。推荐结构：
 
 ```text
-GitHub Pages 页面 -> Cloudflare Worker /tts -> Azure Speech TTS
+GitHub Pages 页面 -> Cloudflare Worker /tts -> 讯飞在线语音合成
 ```
 
 本仓库已内置一个 Worker 示例，默认使用：
 
 ```text
-中文：zh-CN-XiaoxiaoNeural
-英文：en-US-JennyNeural
+中文：x4_xiaoyan
+英文：x4_xiaoyan
 ```
 
-Azure Speech 的中文短词发音比 MeloTTS 更稳定，更适合听写。Cloudflare Worker 只负责隐藏 Azure Key，并把前端请求转成 Azure Speech REST API 调用。
+讯飞在线语音合成的中文短词发音比 MeloTTS 更稳定，更适合听写。Cloudflare Worker 只负责隐藏讯飞密钥，并把前端请求转成讯飞 WebSocket API 调用。
 
-### Azure Speech TTS 是否免费？
+### 讯飞 TTS 是否免费？
 
 结论：**小规模家用大概率能落在免费额度里，但不是无限免费。**
 
-Cloudflare Worker 本身有免费请求额度。Azure Speech `F0` 免费层通常提供每月 `500,000` 字符的神经语音额度。Azure 计费说明里中文汉字按 2 个字符计，所以约等于每月 `250,000` 个汉字，听写类短词/短句一般够用。
+Cloudflare Worker 本身有免费请求额度。讯飞在线语音合成创建应用后默认每日 `500` 次免费调用，听写类短词/短句一般够用。
 
-超过免费额度后，Azure 免费层通常会限流或拒绝请求。建议在 Azure 里设置预算提醒。
+超过免费额度后，讯飞可能限流、返回授权不足或需要购买正式套餐。建议不要开启不必要的后付费能力。
 
 ### 部署 Worker
 
@@ -46,13 +46,15 @@ npm install
 npm run deploy
 ```
 
-部署后需要把 Azure Speech Key 写入 Cloudflare Worker secret：
+部署后需要把讯飞密钥写入 Cloudflare Worker secret：
 
 ```bash
-echo "<你的 Azure Speech Key>" | npx wrangler secret put AZURE_SPEECH_KEY
+echo "<你的 APPID>" | npx wrangler secret put XUNFEI_APP_ID
+echo "<你的 APIKey>" | npx wrangler secret put XUNFEI_API_KEY
+echo "<你的 APISecret>" | npx wrangler secret put XUNFEI_API_SECRET
 ```
 
-默认区域是 `eastus`。如果你的 Azure Speech 资源不是 `eastus`，修改 `worker/wrangler.jsonc` 里的 `AZURE_SPEECH_REGION` 后重新部署。
+默认发音人是 `x4_xiaoyan`。如果控制台授权的是其他发音人，修改 `worker/wrangler.jsonc` 里的 `XUNFEI_VOICE_CN` 和 `XUNFEI_VOICE_EN` 后重新部署。
 
 部署完成后会得到类似地址：
 
