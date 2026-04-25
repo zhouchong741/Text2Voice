@@ -38,7 +38,7 @@ export default {
             headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
             headers.set('Access-Control-Allow-Headers', 'Content-Type');
             headers.set('Cache-Control', 'no-store');
-            headers.set('Content-Type', headers.get('Content-Type') || 'audio/mpeg');
+            headers.set('Content-Type', headers.get('Content-Type') || getAudioContentType(model));
 
             return new Response(audioResponse.body, {
                 status: audioResponse.status,
@@ -77,7 +77,7 @@ async function runTextToSpeech(env, model, text, lang) {
     if (result && typeof result.audio === 'string') {
         return new Response(base64ToArrayBuffer(result.audio), {
             headers: {
-                'Content-Type': 'audio/mpeg'
+                'Content-Type': getAudioContentType(model)
             }
         });
     }
@@ -96,6 +96,10 @@ function buildCorsHeaders(env) {
 
 function normalizeLang(lang) {
     return lang === 'en' ? 'en' : 'zh';
+}
+
+function getAudioContentType(model) {
+    return model === '@cf/deepgram/aura-1' ? 'audio/mpeg' : 'audio/wav';
 }
 
 function jsonResponse(body, status, headers) {
