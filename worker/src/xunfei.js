@@ -51,6 +51,11 @@ export function rateToXunfeiSpeed(rate) {
     return Math.round(Math.min(Math.max(safeRate, 0.5), 2) * 50);
 }
 
+export function normalizeXunfeiVoice(voice) {
+    const normalized = String(voice || '').trim();
+    return /^[A-Za-z0-9_]+$/.test(normalized) ? normalized : '';
+}
+
 export function collectXunfeiAudio(socket, payload, timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
         const chunks = [];

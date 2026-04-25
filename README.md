@@ -26,7 +26,7 @@ GitHub Pages 页面 -> Cloudflare Worker /tts -> 讯飞在线语音合成
 英文：x4_xiaoyan
 ```
 
-讯飞在线语音合成的中文短词发音比 MeloTTS 更稳定，更适合听写。Cloudflare Worker 只负责隐藏讯飞密钥，并把前端请求转成讯飞 WebSocket API 调用。
+讯飞在线语音合成的中文短词发音比 MeloTTS 更稳定，更适合听写。Cloudflare Worker 只负责隐藏讯飞密钥，并把前端请求转成讯飞 WebSocket API 调用。前端支持配置多个发音人下拉选项；如果某个发音人在讯飞控制台没有授权，云端请求会失败并自动退回浏览器本机语音。
 
 ### 讯飞 TTS 是否免费？
 

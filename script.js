@@ -9,6 +9,7 @@ const els = {
     interval: document.getElementById('interval'),
     repetitions: document.getElementById('repetitions'),
     rate: document.getElementById('rate'),
+    voiceSelect: document.getElementById('voiceSelect'),
     voiceBtnCN: document.getElementById('voiceBtnCN'),
     voiceBtnEN: document.getElementById('voiceBtnEN'),
     startBtn: document.getElementById('startBtn'),
@@ -35,6 +36,7 @@ const state = {
     wordDuration: 0,
     voices: [],
     currentLang: 'CN', // 'CN' or 'EN'
+    selectedVoiceId: '',
     voiceCN: null,
     voiceEN: null,
     currentAudio: null,
@@ -58,6 +60,7 @@ function init() {
         speechSynthesis.onvoiceschanged = loadVoices;
     }
 
+    setupVoiceSelect();
     bindEvents();
 
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -104,6 +107,7 @@ function bindEvents() {
     // Voice Toggles
     els.voiceBtnCN.addEventListener('click', () => setVoice('CN'));
     els.voiceBtnEN.addEventListener('click', () => setVoice('EN'));
+    els.voiceSelect.addEventListener('change', handleVoiceSelectChange);
 
     // Auto-update queue visual on input change
     els.input.addEventListener('input', () => {
@@ -111,7 +115,37 @@ function bindEvents() {
     });
 }
 
-function setVoice(lang) {
+function setupVoiceSelect() {
+    const voiceOptions = state.ttsConfig.voiceOptions || [];
+    els.voiceSelect.innerHTML = '';
+
+    voiceOptions.forEach((voice) => {
+        const option = document.createElement('option');
+        option.value = voice.id;
+        option.textContent = voice.label;
+        option.dataset.lang = voice.lang;
+        els.voiceSelect.appendChild(option);
+    });
+
+    if (voiceOptions.length > 0) {
+        const defaultVoice = voiceOptions.find((voice) => voice.lang === state.currentLang) || voiceOptions[0];
+        state.selectedVoiceId = defaultVoice.id;
+        state.currentLang = defaultVoice.lang;
+        els.voiceSelect.value = defaultVoice.id;
+    } else {
+        els.voiceSelect.disabled = true;
+    }
+
+    setVoice(state.currentLang, false);
+}
+
+function handleVoiceSelectChange() {
+    const selectedOption = els.voiceSelect.selectedOptions[0];
+    state.selectedVoiceId = els.voiceSelect.value;
+    setVoice(selectedOption?.dataset.lang || state.currentLang, false);
+}
+
+function setVoice(lang, updateSelect = true) {
     state.currentLang = lang;
     if (lang === 'CN') {
         els.voiceBtnCN.classList.add('active');
@@ -120,6 +154,19 @@ function setVoice(lang) {
         els.voiceBtnEN.classList.add('active');
         els.voiceBtnCN.classList.remove('active');
     }
+
+    if (updateSelect) {
+        selectDefaultVoiceForLang(lang);
+    }
+}
+
+function selectDefaultVoiceForLang(lang) {
+    const voiceOptions = state.ttsConfig.voiceOptions || [];
+    const defaultVoice = voiceOptions.find((voice) => voice.lang === lang);
+    if (!defaultVoice) return;
+
+    state.selectedVoiceId = defaultVoice.id;
+    els.voiceSelect.value = defaultVoice.id;
 }
 
 // --- Core Logic ---
@@ -161,6 +208,9 @@ function startSequence() {
         els.interval.disabled = true;
         els.repetitions.disabled = true;
         els.rate.disabled = true;
+        els.voiceSelect.disabled = true;
+        els.voiceBtnCN.disabled = true;
+        els.voiceBtnEN.disabled = true;
 
         playWordCycle();
     }
@@ -192,6 +242,9 @@ function resetSequence() {
     els.interval.disabled = false;
     els.repetitions.disabled = false;
     els.rate.disabled = false;
+    els.voiceSelect.disabled = false;
+    els.voiceBtnCN.disabled = false;
+    els.voiceBtnEN.disabled = false;
 
     els.currentWord.textContent = "...";
     els.statusText.textContent = "准备就绪";
@@ -265,7 +318,7 @@ function speak(text) {
 }
 
 async function speakWithCloud(text) {
-    const payload = Text2VoiceTTS.buildTtsPayload(text, state.currentLang, els.rate.value);
+    const payload = Text2VoiceTTS.buildTtsPayload(text, state.currentLang, els.rate.value, state.selectedVoiceId);
     if (!payload.text) return;
     if (payload.text.length > state.ttsConfig.maxTextLength) {
         throw new Error(`Text is longer than ${state.ttsConfig.maxTextLength} characters`);

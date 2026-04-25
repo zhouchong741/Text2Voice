@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import {
     buildXunfeiAuthUrl,
     buildXunfeiPayload,
+    normalizeXunfeiVoice,
     rateToXunfeiSpeed
 } from '../src/xunfei.js';
 
@@ -46,5 +47,8 @@ assert.equal(payload.data.status, 2);
 assert.equal(rateToXunfeiSpeed(0.5), 25);
 assert.equal(rateToXunfeiSpeed(1), 50);
 assert.equal(rateToXunfeiSpeed(2), 100);
+assert.equal(normalizeXunfeiVoice('x4_xiaoyan'), 'x4_xiaoyan');
+assert.equal(normalizeXunfeiVoice('catherine'), 'catherine');
+assert.equal(normalizeXunfeiVoice('bad/voice'), '');
 
 console.log('xunfei tests passed');

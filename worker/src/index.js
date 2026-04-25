@@ -2,6 +2,7 @@ import {
     buildXunfeiAuthUrl,
     buildXunfeiPayload,
     collectXunfeiAudio,
+    normalizeXunfeiVoice,
     rateToXunfeiSpeed
 } from './xunfei.js';
 
@@ -80,6 +81,11 @@ async function synthesizeWithXunfei(env, { text, voice, speed }) {
 }
 
 function selectVoice(env, requestedVoice) {
+    const normalizedVoice = normalizeXunfeiVoice(requestedVoice);
+    if (normalizedVoice && normalizedVoice !== 'CN' && normalizedVoice !== 'EN') {
+        return normalizedVoice;
+    }
+
     if (requestedVoice === 'EN' && env.XUNFEI_VOICE_EN) {
         return env.XUNFEI_VOICE_EN;
     }
