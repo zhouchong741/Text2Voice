@@ -1,4 +1,6 @@
-const DEFAULT_MODEL = '@cf/myshell-ai/melotts';
+const DEFAULT_AZURE_FORMAT = 'audio-24khz-48kbitrate-mono-mp3';
+const DEFAULT_CN_VOICE = 'zh-CN-XiaoxiaoNeural';
+const DEFAULT_EN_VOICE = 'en-US-JennyNeural';
 
 export default {
     async fetch(request, env) {
@@ -23,6 +25,10 @@ export default {
             const lang = normalizeLang(body.lang);
             const maxTextLength = Number(env.MAX_TEXT_LENGTH || 300);
 
+            if (!env.AZURE_SPEECH_KEY || !env.AZURE_SPEECH_REGION) {
+                return jsonResponse({ error: 'Azure Speech is not configured' }, 503, corsHeaders);
+            }
+
             if (!text) {
                 return jsonResponse({ error: 'Missing text' }, 400, corsHeaders);
             }
@@ -31,14 +37,15 @@ export default {
                 return jsonResponse({ error: `Text is longer than ${maxTextLength} characters` }, 413, corsHeaders);
             }
 
-            const model = env.TTS_MODEL || DEFAULT_MODEL;
-            const audioResponse = await runTextToSpeech(env, model, text, lang);
+            const voice = selectVoice(env, lang);
+            const ssml = buildSsml(text, voice, lang, body.rate);
+            const audioResponse = await synthesizeWithAzure(env, ssml);
             const headers = new Headers(audioResponse.headers);
             headers.set('Access-Control-Allow-Origin', corsHeaders.get('Access-Control-Allow-Origin'));
             headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
             headers.set('Access-Control-Allow-Headers', 'Content-Type');
             headers.set('Cache-Control', 'no-store');
-            headers.set('Content-Type', headers.get('Content-Type') || getAudioContentType(model));
+            headers.set('Content-Type', 'audio/mpeg');
 
             return new Response(audioResponse.body, {
                 status: audioResponse.status,
@@ -54,35 +61,64 @@ export default {
     }
 };
 
-async function runTextToSpeech(env, model, text, lang) {
-    if (model === '@cf/deepgram/aura-1') {
-        return env.AI.run(model, {
-            text,
-            speaker: lang === 'en' ? 'luna' : 'stella',
-            encoding: 'mp3'
-        }, {
-            returnRawResponse: true
-        });
-    }
-
-    const result = await env.AI.run(model, {
-        prompt: text,
-        lang
+async function synthesizeWithAzure(env, ssml) {
+    const region = String(env.AZURE_SPEECH_REGION).trim();
+    const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/ssml+xml',
+            'Ocp-Apim-Subscription-Key': env.AZURE_SPEECH_KEY,
+            'X-Microsoft-OutputFormat': env.AZURE_OUTPUT_FORMAT || DEFAULT_AZURE_FORMAT,
+            'User-Agent': 'Text2Voice'
+        },
+        body: ssml
     });
 
-    if (result instanceof Response) {
-        return result;
+    if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(`Azure Speech failed: ${response.status} ${detail.slice(0, 200)}`);
     }
 
-    if (result && typeof result.audio === 'string') {
-        return new Response(base64ToArrayBuffer(result.audio), {
-            headers: {
-                'Content-Type': getAudioContentType(model)
-            }
-        });
+    return response;
+}
+
+function selectVoice(env, lang) {
+    if (lang === 'en-US') {
+        return env.AZURE_VOICE_EN || DEFAULT_EN_VOICE;
     }
 
-    throw new Error('Unexpected Workers AI response');
+    return env.AZURE_VOICE_CN || DEFAULT_CN_VOICE;
+}
+
+function buildSsml(text, voice, lang, rawRate) {
+    const rate = normalizeRate(rawRate);
+    const escapedText = escapeXml(addReadingPause(text, lang));
+
+    return [
+        '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"',
+        ` xml:lang="${lang}">`,
+        `<voice name="${voice}">`,
+        `<prosody rate="${rate}">${escapedText}</prosody>`,
+        '</voice>',
+        '</speak>'
+    ].join('');
+}
+
+function addReadingPause(text, lang) {
+    if (/[。！？.!?]$/.test(text)) {
+        return text;
+    }
+
+    return lang === 'zh-CN' ? `${text}。` : `${text}.`;
+}
+
+function normalizeRate(rate) {
+    const numericRate = Number(rate);
+    if (!Number.isFinite(numericRate)) return '0%';
+
+    const percent = Math.round((Math.min(Math.max(numericRate, 0.5), 2) - 1) * 100);
+    return `${percent >= 0 ? '+' : ''}${percent}%`;
 }
 
 function buildCorsHeaders(env) {
@@ -95,11 +131,7 @@ function buildCorsHeaders(env) {
 }
 
 function normalizeLang(lang) {
-    return lang === 'en' ? 'en' : 'zh';
-}
-
-function getAudioContentType(model) {
-    return model === '@cf/deepgram/aura-1' ? 'audio/mpeg' : 'audio/wav';
+    return lang === 'en' ? 'en-US' : 'zh-CN';
 }
 
 function jsonResponse(body, status, headers) {
@@ -112,13 +144,15 @@ function jsonResponse(body, status, headers) {
     });
 }
 
-function base64ToArrayBuffer(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-
-    return bytes.buffer;
+function escapeXml(value) {
+    return String(value).replace(/[<>&'"]/g, (char) => {
+        switch (char) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case "'": return '&apos;';
+            case '"': return '&quot;';
+            default: return char;
+        }
+    });
 }

@@ -6,7 +6,7 @@
 
 *   **智能循环**：自定义间隔时间（默认30秒），在间隔内自动多次朗读（默认3次）。
 *   **深色模式**：采用 Deepmind 风格的玻璃拟态（Glassmorphism）设计，专注沉浸。
-*   **自然语音优先**：可接入 Cloudflare Workers AI 的多语言 TTS，发音比浏览器原生声音更自然。
+*   **自然语音优先**：通过 Cloudflare Worker 中转 Azure Speech 神经语音，发音比浏览器原生声音更自然。
 *   **原生语音兜底**：Worker 未配置、网络失败或额度用尽时，自动使用浏览器原生 Web Speech API。
 *   **离线兜底**：未配置云端 TTS 时，仍可依赖浏览器原生能力发声。
 *   **可视化进度**：清晰的倒计时圆环和进度条。
@@ -16,27 +16,25 @@
 GitHub Pages 是纯静态托管，不能把任何 TTS API Key 放到前端。推荐结构：
 
 ```text
-GitHub Pages 页面 -> Cloudflare Worker /tts -> Cloudflare Workers AI TTS
+GitHub Pages 页面 -> Cloudflare Worker /tts -> Azure Speech TTS
 ```
 
 本仓库已内置一个 Worker 示例，默认使用：
 
 ```text
-@cf/myshell-ai/melotts
+中文：zh-CN-XiaoxiaoNeural
+英文：en-US-JennyNeural
 ```
 
-这个模型支持多语言 TTS，价格很低，适合听写这种短词/短句场景。后续如果只追求英文自然度，也可以在 `worker/wrangler.jsonc` 里把 `TTS_MODEL` 改成 `@cf/deepgram/aura-1`，但它更贵，并且不适合作为中文默认方案。
+Azure Speech 的中文短词发音比 MeloTTS 更稳定，更适合听写。Cloudflare Worker 只负责隐藏 Azure Key，并把前端请求转成 Azure Speech REST API 调用。
 
-### Cloudflare Worker TTS 是否免费？
+### Azure Speech TTS 是否免费？
 
 结论：**小规模家用大概率能落在免费额度里，但不是无限免费。**
 
-Cloudflare Worker 本身有免费请求额度；Workers AI 也有每天免费 Neurons。TTS 模型会消耗 Workers AI 额度：
+Cloudflare Worker 本身有免费请求额度。Azure Speech `F0` 免费层通常提供每月 `500,000` 字符的神经语音额度。Azure 计费说明里中文汉字按 2 个字符计，所以约等于每月 `250,000` 个汉字，听写类短词/短句一般够用。
 
-*   `@cf/myshell-ai/melotts`：按音频分钟计费，当前约 `$0.0002 / audio minute`。
-*   `@cf/deepgram/aura-1`：按字符计费，当前约 `$0.015 / 1k characters`。
-
-如果每天只是给小朋友听写几十到几百个词，`melotts` 的消耗通常很低。超过 Workers AI 免费额度后，需要 Workers Paid 才能继续按量付费。
+超过免费额度后，Azure 免费层通常会限流或拒绝请求。建议在 Azure 里设置预算提醒。
 
 ### 部署 Worker
 
@@ -47,6 +45,14 @@ cd worker
 npm install
 npm run deploy
 ```
+
+部署后需要把 Azure Speech Key 写入 Cloudflare Worker secret：
+
+```bash
+echo "<你的 Azure Speech Key>" | npx wrangler secret put AZURE_SPEECH_KEY
+```
+
+默认区域是 `eastus`。如果你的 Azure Speech 资源不是 `eastus`，修改 `worker/wrangler.jsonc` 里的 `AZURE_SPEECH_REGION` 后重新部署。
 
 部署完成后会得到类似地址：
 
