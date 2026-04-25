@@ -7,6 +7,7 @@
     <title>Text2Voice</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="ic_launcher.png">
     <link rel="apple-touch-icon" href="ic_launcher.png">
     <meta name="theme-color" content="#0f172a">
     <script>
@@ -57,8 +58,8 @@
                     <div class="input-field">
                         <label for="voiceSelect">朗读声音</label>
                         <div class="voice-toggle-group" id="voiceToggleGroup">
-                            <button id="voiceBtnCN" class="btn voice-btn active" data-lang="CN">🇨🇳 Google 普通话</button>
-                            <button id="voiceBtnEN" class="btn voice-btn" data-lang="EN">🇺🇸 Microsoft Zira</button>
+                            <button id="voiceBtnCN" class="btn voice-btn active" data-lang="CN">中文自然女声</button>
+                            <button id="voiceBtnEN" class="btn voice-btn" data-lang="EN">英文自然女声</button>
                         </div>
                     </div>
                 </div>
@@ -117,6 +118,8 @@
         </main>
     </div>
 
+    <script src="config.js"></script>
+    <script src="tts-utils.js"></script>
     <script src="script.js"></script>
 </body>
 

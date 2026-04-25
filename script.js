@@ -36,7 +36,9 @@ const state = {
     voices: [],
     currentLang: 'CN', // 'CN' or 'EN'
     voiceCN: null,
-    voiceEN: null
+    voiceEN: null,
+    currentAudio: null,
+    ttsConfig: Text2VoiceTTS.getTtsConfig(window.TEXT2VOICE_TTS)
 };
 
 // --- Initialization ---
@@ -173,7 +175,7 @@ function togglePause() {
         state.isPlaying = false;
         state.isPaused = true;
         clearTimers();
-        speechSynthesis.cancel(); // Stop speaking immediately
+        stopCurrentSpeech();
         els.statusText.textContent = "已暂停";
     }
     updateUI();
@@ -184,7 +186,7 @@ function resetSequence() {
     state.isPaused = false;
     state.currentIndex = 0;
     clearTimers();
-    speechSynthesis.cancel();
+    stopCurrentSpeech();
 
     els.input.disabled = false;
     els.interval.disabled = false;
@@ -245,29 +247,89 @@ function playWordCycle() {
 function speak(text) {
     if (!state.isPlaying && !state.isPaused) return;
 
-    // Cancel current if overlapping (though design prevents overlap if interval is large enough)
-    speechSynthesis.cancel();
+    stopCurrentSpeech();
+    animateCurrentWord();
 
+    if (Text2VoiceTTS.shouldUseCloudTts(state.ttsConfig)) {
+        speakWithCloud(text).catch((err) => {
+            console.warn('Cloud TTS failed, falling back to browser voice:', err);
+            if (state.isPlaying || state.isPaused) {
+                els.statusText.textContent = '云端语音失败，已使用本机语音';
+                speakWithBrowser(text);
+            }
+        });
+        return;
+    }
+
+    speakWithBrowser(text);
+}
+
+async function speakWithCloud(text) {
+    const payload = Text2VoiceTTS.buildTtsPayload(text, state.currentLang, els.rate.value);
+    if (!payload.text) return;
+    if (payload.text.length > state.ttsConfig.maxTextLength) {
+        throw new Error(`Text is longer than ${state.ttsConfig.maxTextLength} characters`);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), state.ttsConfig.timeoutMs);
+
+    try {
+        const response = await fetch(state.ttsConfig.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            throw new Error(`TTS request failed: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        state.currentAudio = audio;
+        audio.playbackRate = Math.min(Math.max(payload.rate, 0.5), 2);
+        audio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
+        audio.addEventListener('error', () => URL.revokeObjectURL(audioUrl), { once: true });
+        await audio.play();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function speakWithBrowser(text) {
     const utterance = new SpeechSynthesisUtterance(text);
 
-    // Apply settings
-    // Apply settings
     const targetVoice = state.currentLang === 'CN' ? state.voiceCN : state.voiceEN;
     if (targetVoice) {
         utterance.voice = targetVoice;
     }
 
-    // Rate/Pitch defaults
     const rateVal = parseFloat(els.rate.value) || 1;
     utterance.rate = rateVal;
     utterance.pitch = 1;
 
-    // Visual flare
-    els.currentWord.classList.remove('word-animate');
-    void els.currentWord.offsetWidth; // trigger reflow
-    els.currentWord.classList.add('word-animate');
-
     speechSynthesis.speak(utterance);
+}
+
+function stopCurrentSpeech() {
+    speechSynthesis.cancel();
+
+    if (state.currentAudio) {
+        state.currentAudio.pause();
+        state.currentAudio.currentTime = 0;
+        state.currentAudio = null;
+    }
+}
+
+function animateCurrentWord() {
+    els.currentWord.classList.remove('word-animate');
+    void els.currentWord.offsetWidth;
+    els.currentWord.classList.add('word-animate');
 }
 
 function finishSequence() {

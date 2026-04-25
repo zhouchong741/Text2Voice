@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "text2voice-tts",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-25",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "TTS_MODEL": "@cf/myshell-ai/melotts",
+    "ALLOWED_ORIGIN": "*",
+    "MAX_TEXT_LENGTH": "300"
+  },
+  "ai": {
+    "binding": "AI"
+  }
+}

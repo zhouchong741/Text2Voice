@@ -1,11 +1,13 @@
-const CACHE_NAME = 'voice-loop-v1';
+const CACHE_NAME = 'voice-loop-v2';
 const ASSETS = [
     './',
     './index.html',
     './style.css',
     './script.js',
+    './tts-utils.js',
+    './config.js',
     './manifest.json',
-    './icon.svg'
+    './ic_launcher.png'
 ];
 
 self.addEventListener('install', (e) => {
